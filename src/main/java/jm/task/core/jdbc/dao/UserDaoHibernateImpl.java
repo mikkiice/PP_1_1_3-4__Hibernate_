@@ -3,7 +3,7 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 import org.hibernate.Session;
-
+import org.hibernate.Transaction;
 
 
 import java.util.List;
@@ -44,12 +44,16 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
+        Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
-            session.beginTransaction();
+            transaction = session.beginTransaction();
             User user = new User(name, lastName, age);
             session.save(user);
-            session.getTransaction().commit();
+            transaction.commit();
         } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
             e.printStackTrace();
         }
     }
@@ -57,14 +61,18 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void removeUserById(long id) {
+        Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
-            session.beginTransaction();
+            transaction = session.beginTransaction();
             User user = session.get(User.class, id);
             if (user != null) {
                 session.delete(user);
             }
-            session.getTransaction().commit();
+            transaction.commit();
         } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
             e.printStackTrace();
         }
 
@@ -79,11 +87,15 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void cleanUsersTable() {
+        Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
-            session.beginTransaction();
+            transaction = session.beginTransaction();
             session.createNativeQuery("DELETE FROM users").executeUpdate();
-            session.getTransaction().commit();
+            transaction.commit();
         } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
             e.printStackTrace();
         }
 
